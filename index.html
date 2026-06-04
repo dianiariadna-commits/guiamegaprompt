@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía: Proyectos y Megaprompts en Claude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F6F2;--surface:#FFFFFF;--surface2:#F0EEE8;
+  --border:#E2DDD6;--border2:#CBC5BC;
+  --text:#1A1916;--text2:#6B6660;--text3:#9C9690;
+  --accent:#5C4EE5;--accent-light:#EAE8FC;
+  --green:#2D7D5A;--green-light:#E3F5EC;
+  --amber:#8B5E0A;--amber-light:#FEF3DC;
+  --coral:#C04A2D;--coral-light:#FDEEE9;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --r:10px;--r-lg:14px;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:256px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:22px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-tag{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.logo-title{font-size:15px;font-weight:600;color:var(--text)}
+.sidebar-nav{padding:10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r);cursor:pointer;transition:all .15s;margin-bottom:2px;font-size:13px;color:var(--text2);border:1px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:var(--accent);border-color:#C5BFFE;font-weight:500}
+.nav-item.done{color:var(--text2)}
+.nav-num{width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--text3);flex-shrink:0;transition:all .15s}
+.nav-item.active .nav-num{background:var(--accent);color:#fff}
+.nav-item.done .nav-num{background:var(--green-light);color:var(--green)}
+.nav-label{flex:1}
+.nav-check{font-size:11px;color:var(--green);display:none}
+.nav-item.done .nav-check{display:block}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border)}
+.progress-label{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;color:var(--text3)}
+.progress-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease}
+.main{flex:1;max-width:800px;padding:40px 48px}
+.section{display:none}
+.section.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sec-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px;padding-bottom:22px;border-bottom:1px solid var(--border)}
+.sec-icon{width:48px;height:48px;border-radius:12px;background:var(--accent-light);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.sec-title{font-size:22px;font-weight:600;line-height:1.2;color:var(--text)}
+.sec-sub{font-size:14px;color:var(--text2);margin-top:4px;line-height:1.5}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px}
+.card-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+.card-text{font-size:14px;color:var(--text2);line-height:1.75}
+.step-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.step-row{display:flex;gap:14px;align-items:flex-start;padding:13px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.step-dot{width:26px;height:26px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-title-sm{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px}
+.step-desc{font-size:13px;color:var(--text2);line-height:1.65}
+.code-label{background:#2D2A42;color:#8B82C4;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:7px 16px;border-radius:var(--r) var(--r) 0 0;font-family:var(--mono)}
+.code-block{background:#1E1C2E;border-radius:var(--r);padding:16px 18px;font-family:var(--mono);font-size:12.5px;line-height:1.75;color:#C8C4E8;margin-bottom:14px;white-space:pre-wrap;word-break:break-word}
+.code-block.attached{border-radius:0 0 var(--r) var(--r)}
+.tip{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r);margin-bottom:14px;font-size:13px;line-height:1.7}
+.tip-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.tip.info{background:var(--accent-light);color:#3D32B8;border:1px solid #C5BFFE}
+.tip.warn{background:var(--amber-light);color:var(--amber);border:1px solid #F0D090}
+.tip.success{background:var(--green-light);color:var(--green);border:1px solid #90D4B4}
+.tip.danger{background:var(--coral-light);color:var(--coral);border:1px solid #F0B0A0}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-purple{background:var(--accent-light);color:var(--accent)}
+.badge-green{background:var(--green-light);color:var(--green)}
+.badge-amber{background:var(--amber-light);color:var(--amber)}
+.badge-coral{background:var(--coral-light);color:var(--coral)}
+.mp-outer{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px}
+.mp-bar{background:var(--surface2);padding:10px 16px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);font-weight:500;display:flex;justify-content:space-between;align-items:center}
+.mp-body{padding:20px 22px;font-size:13.5px;line-height:1.85;color:var(--text);max-height:540px;overflow-y:auto;background:var(--surface)}
+.mp-body p{margin-bottom:14px}
+.mp-body p:last-child{margin-bottom:0}
+.mp-resource{margin-bottom:18px}
+.mp-res-title{font-weight:600;color:var(--text);font-size:13.5px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.mp-res-body{font-size:13px;color:var(--text2);line-height:1.75;padding-left:14px;border-left:2px solid var(--accent-light)}
+.abcdef-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.abc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.abc-letter{font-size:24px;font-weight:700;color:var(--accent);line-height:1;margin-bottom:2px}
+.abc-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.abc-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.check-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.check-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text);transition:all .15s;user-select:none}
+.check-item:hover{border-color:var(--border2)}
+.check-item.done{background:var(--green-light);border-color:#90D4B4;color:var(--green);text-decoration:line-through;opacity:.75}
+.check-box{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
+.check-item.done .check-box{background:var(--green);border-color:var(--green);color:white}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.metric-card{background:var(--surface2);border-radius:var(--r);padding:14px 16px}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:4px}
+.metric-val{font-size:24px;font-weight:600;color:var(--text)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.nav-buttons{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--border)}
+.btn{padding:9px 20px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-family:var(--font)}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn-primary:hover{background:#4A3DC8}
+.btn:disabled{opacity:.35;cursor:default}
+.done-banner{display:none;padding:16px 20px;background:var(--green-light);border:1px solid #90D4B4;border-radius:var(--r-lg);color:var(--green);font-size:14px;font-weight:500;margin-top:12px;align-items:center;gap:10px}
+em{font-style:normal;font-weight:500;color:var(--text)}
+strong{font-weight:600}
+@media(max-width:720px){.sidebar{display:none}.main{padding:24px 20px}.abcdef-grid,.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-tag">Guía de trabajo</div>
+    <div class="logo-title">Proyectos en Claude</div>
+  </div>
+  <nav class="sidebar-nav" id="sideNav"></nav>
+  <div class="sidebar-footer">
+    <div class="progress-label"><span>Progreso</span><span id="progLabel">0 / 7</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- 0 BIENVENIDA -->
+<div class="section active" id="sec0">
+  <div class="sec-header">
+    <div class="sec-icon">👋</div>
+    <div>
+      <div class="sec-title">Bienvenida</div>
+      <div class="sec-sub">Bienvenido a este aplicativo que te explicará el paso a paso para crear los proyectos de tus clientes en Claude. Debes estar atento a cada fase.</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="metric-card"><div class="metric-label">Fases del proceso</div><div class="metric-val">7</div><div class="metric-sub">De la configuración a las iteraciones</div></div>
+    <div class="metric-card"><div class="metric-label">Clave del proceso</div><div class="metric-val">📄 → 🧠</div><div class="metric-sub">Docs MD + Megaprompt preciso</div></div>
+  </div>
+  <div class="step-list">
+    <div class="step-row" style="cursor:pointer" onclick="goTo(1)"><div class="step-dot">1</div><div><div class="step-title-sm">Creación del proyecto</div><div class="step-desc">Crear el proyecto en Claude con el nombre correcto desde el panel izquierdo</div></div></div>
+    <div class="step-row" style="cursor:pointer" onclick="goTo(2)"><div class="step-dot">2</div><div><div class="step-title-sm">Archivos en formato MD</div><div class="step-desc">Convertir blueprint, estructura y plantillas DI a Markdown antes de subirlos al proyecto</div></div></div>
+    <div class="step-row" style="cursor:pointer" onclick="goTo(3)"><div class="step-dot">3</div><div><div class="step-title-sm">El Megaprompt</div><div class="step-desc">Escribir las instrucciones maestras en el campo "Instrucciones" del panel derecho y guardar</div></div></div>
+    <div class="step-row" style="cursor:pointer" onclick="goTo(4)"><div class="step-dot">4</div><div><div class="step-title-sm">Framework ABCDEF</div><div class="step-desc">Herramienta de apoyo para construir megaprompts completos y estructurados</div></div></div>
+    <div class="step-row" style="cursor:pointer" onclick="goTo(5)"><div class="step-dot">5</div><div><div class="step-title-sm">Inicio de creación</div><div class="step-desc">Empezar la producción módulo a módulo con el sílabo del curso cargado</div></div></div>
+    <div class="step-row" style="cursor:pointer" onclick="goTo(6)"><div class="step-dot">6</div><div><div class="step-title-sm">Iteraciones</div><div class="step-desc">Qué revisar y cómo iterar con Claude en cada recurso y módulo</div></div></div>
+    <div class="step-row" style="cursor:pointer" onclick="goTo(7)"><div class="step-dot">✓</div><div><div class="step-title-sm">Checklist de cierre</div><div class="step-desc">Lista de verificación antes de dar el proyecto por listo</div></div></div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" disabled>← Anterior</button>
+    <button class="btn btn-primary" onclick="goTo(1)">Comenzar →</button>
+  </div>
+</div>
+
+<!-- 1 CREACIÓN DE PROYECTO -->
+<div class="section" id="sec1">
+  <div class="sec-header">
+    <div class="sec-icon">📁</div>
+    <div>
+      <div class="sec-title">Creación del proyecto</div>
+      <div class="sec-sub">Para iniciar, debes ingresar a Claude y crear el proyecto siguiendo estos pasos exactos</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Pasos para crear el proyecto</div>
+    <div class="step-list" style="margin-bottom:0">
+      <div class="step-row"><div class="step-dot">1</div><div><div class="step-title-sm">Ingresa a Claude</div><div class="step-desc">Abre <em>claude.ai</em> y en el <em>panel izquierdo</em> busca la opción de <em>Proyectos</em></div></div></div>
+      <div class="step-row"><div class="step-dot">2</div><div><div class="step-title-sm">Clic en "Crear proyecto"</div><div class="step-desc">Esto abrirá la configuración del nuevo proyecto</div></div></div>
+      <div class="step-row"><div class="step-dot">3</div><div><div class="step-title-sm">Asigna el nombre con la convención obligatoria</div><div class="step-desc">La sugerencia es que el proyecto <em>siempre</em> tenga el nombre de: <strong>Contenido - [nombre del cliente]</strong><br>Ejemplo: <em>Contenido - ClienteY</em></div></div></div>
+    </div>
+  </div>
+  <div class="tip warn">
+    <span class="tip-icon">⚠️</span>
+    <div><strong>Convención de nombre — siempre obligatoria:</strong><br>Formato: <em>Contenido - [Nombre del cliente]</em><br>Ejemplo: <em>Contenido - ClienteY</em></div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(0)">← Anterior</button>
+    <button class="btn btn-primary" onclick="markDone(1);goTo(2)">Siguiente →</button>
+  </div>
+</div>
+
+<!-- 2 ARCHIVOS MD -->
+<div class="section" id="sec2">
+  <div class="sec-header">
+    <div class="sec-icon">📝</div>
+    <div>
+      <div class="sec-title">Archivos en formato MD</div>
+      <div class="sec-sub">Una vez creado el proyecto y antes de subir los archivos, debes tenerlos todos convertidos a formato Markdown</div>
+    </div>
+  </div>
+  <div class="tip danger">
+    <span class="tip-icon">🔴</span>
+    <div><strong>Antes de convertir, debes tener listo:</strong><br>
+    ✔ Blueprint construido de manera detallada<br>
+    ✔ Estructura aprobada<br>
+    ✔ Todos los documentos del diseño instruccional: <em>plantilla DI, plantilla video, plantilla infografía, plantilla multimedia</em> (estas plantillas dependen de la estructura del curso)</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Proceso paso a paso</div>
+    <div class="step-list" style="margin-bottom:0">
+      <div class="step-row"><div class="step-dot">1</div><div><div class="step-title-sm">Abre una nueva pestaña en el navegador</div><div class="step-desc">Debes abrir una <em>nueva sesión de Claude en otra pestaña</em> e iniciar un chat nuevo — no lo hagas dentro del proyecto que acabas de crear</div></div></div>
+      <div class="step-row"><div class="step-dot">2</div><div><div class="step-title-sm">En esa sesión nueva, sube los archivos originales</div><div class="step-desc">Adjunta en ese chat: <em>blueprint, estructura, plantilla DI, plantilla video, plantilla infografía, plantilla multimedia</em></div></div></div>
+      <div class="step-row"><div class="step-dot">3</div><div><div class="step-title-sm">Escribe el prompt de conversión exacto</div><div class="step-desc">Usa el texto que aparece abajo, tal cual:</div></div></div>
+    </div>
+  </div>
+  <div class="code-label">Prompt exacto para la sesión 2</div>
+  <div class="code-block attached">Vamos a transformar los siguientes documentos en formato MD</div>
+  <div class="tip success">
+    <span class="tip-icon">✅</span>
+    <div>Una vez la <em>sesión 2 de Claude</em> te entregue los documentos en MD, <strong>regresa a la sesión original donde creaste el proyecto</strong> y desde ahí sube todos los archivos MD al proyecto.</div>
+  </div>
+  <div class="tip info">
+    <span class="tip-icon">📌</span>
+    <div>Una vez subes todos los documentos, en el <em>panel derecho</em> podrás visualizar el cargue. Ahí mismo busca la opción que dice <em>"Instrucciones"</em>, haz clic — ese es el campo donde crearás el megaprompt en la siguiente sección.</div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(1)">← Anterior</button>
+    <button class="btn btn-primary" onclick="markDone(2);goTo(3)">Siguiente →</button>
+  </div>
+</div>
+
+<!-- 3 MEGAPROMPT -->
+<div class="section" id="sec3">
+  <div class="sec-header">
+    <div class="sec-icon">🧠</div>
+    <div>
+      <div class="sec-title">El Megaprompt</div>
+      <div class="sec-sub">Es la esencia del proyecto. Se construye en el campo "Instrucciones" del panel derecho.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Qué debes incluir obligatoriamente en el megaprompt</div>
+    <div class="step-list" style="margin-bottom:0">
+      <div class="step-row"><div class="step-dot">→</div><div><div class="step-title-sm">Particularidades del cliente</div><div class="step-desc">País del cliente (importante para el lenguaje y los ejemplos), cómo llama a sus contenidos (por ejemplo: "proyecto formativo" en vez de "curso"), niveles de formación que maneja (pregrado, posgrado, etc.)</div></div></div>
+      <div class="step-row"><div class="step-dot">→</div><div><div class="step-title-sm">Modelo pedagógico o enfoque organizacional</div><div class="step-desc">Descripción e interpretación del modelo pedagógico del cliente o su enfoque: cómo estructuran el aprendizaje, cómo llaman a sus unidades (sesiones, semanas, talleres, módulos) y cuántas pueden tener los cursos</div></div></div>
+      <div class="step-row"><div class="step-dot">→</div><div><div class="step-title-sm">Descripción de cada recurso</div><div class="step-desc">Para cada tipo de recurso: <em>qué es, cómo lo quieres y su extensión exacta</em> (páginas, palabras, duración en minutos)</div></div></div>
+      <div class="step-row"><div class="step-dot">→</div><div><div class="step-title-sm">Uso de fuentes</div><div class="step-desc">Indica si quieres fuentes de los últimos 5 años, si solo integras libros o artículos, si las referencias deben venir de una biblioteca específica restringida, y el formato de citación (normas APA u otro)</div></div></div>
+      <div class="step-row"><div class="step-dot">→</div><div><div class="step-title-sm">Prompts para imágenes — obligatorio en desarrollos teóricos</div><div class="step-desc">Indica explícitamente que en los desarrollos teóricos Claude <em>siempre</em> debe dejar los prompts y/o indicaciones para la creación de imágenes</div></div></div>
+    </div>
+  </div>
+
+  <div class="mp-outer">
+    <div class="mp-bar">
+      <span>📋 Ejemplo real de megaprompt · Cliente de Ecuador</span>
+      <span class="badge badge-purple">Megaprompt completo</span>
+    </div>
+    <div class="mp-body">
+      <p>Necesito que creemos un buen sistema para la construcción de estos cursos. Este cliente es de Ecuador, siempre es importante el país del cliente, para que uses su lenguaje, para que cuando sea necesario hacer ejemplos, estén enfocados en ese país. Sin descartar que hayan ejemplos internacionales que puedan aportar al desarrollo.</p>
+      <p><strong>Importante:</strong> Con este cliente no se llama curso ni asignatura, se llaman <em>proyecto formativo</em>.</p>
+      <p>Tenemos curso de pregrado y posgrado. También tienen estructuras de 2, 3 o 4 sesiones eso depende de cada curso y lo que el syllabus diga. En el syllabus las sesiones se pueden llamar también Semanas o talleres. Pero es lo mismo.</p>
+      <p>Te vas a fijar que en la estructura que te adjunté (Excel) pregrado y posgrado tienen un diferencial al inicio y al finalizar las sesiones, por ende vas a tener que anexar en el diseño instruccional esas sesiones según corresponda. Yo te daré un Diseño instruccional (D.I) base para cada caso, pero tú debes analizar el syllabus y determinar qué debe llevar en cada sesión.</p>
+      <p><strong>Cada recurso tiene una misión:</strong></p>
+      <div class="mp-resource">
+        <div class="mp-res-title">📄 Desarrollo teórico</div>
+        <div class="mp-res-body">Es la base teórica y base principal de todos los recursos, son documentos de 15 páginas que deben alojar toda la teoría y conceptos, deben sumarse como mínimo 2 imágenes y 2 tablas. Dependiendo de la temática, puede que se requiera más imágenes. Todas citadas en normas APA.<br><br>Hay una particularidad con ese recurso: todas las referencias deben venir de la biblioteca de la universidad. Por ende, antes de iniciar con el curso, la persona debe entregarte los autores y los links para que puedas poner las referencias. Como el acceso a la universidad es restringido por usuario y contraseña, la persona debe entrar, hacer la curación y darte los autores y/o descargar los documentos para darte esa base teórica. Pueden haber autores fundacionales, pero la mayoría debe ser lo más contemporáneo posible.</div>
+      </div>
+      <div class="mp-resource">
+        <div class="mp-res-title">🎬 Video</div>
+        <div class="mp-res-body">Este video, que no es de más de 2 minutos, es el intro de la sesión. Debe abordar de manera genérica y llamativa los temas que se verán en la sesión.</div>
+      </div>
+      <div class="mp-resource">
+        <div class="mp-res-title">💻 Multimedia</div>
+        <div class="mp-res-body">Desarrolla un ejemplo real contextualizado en Ecuador que muestre cómo se aplica el tema en el entorno nacional. Este ejemplo debe ser actual, verosímil y relacionado directamente con la práctica profesional o social del país. Da un contexto completo sin que pase las 60 palabras.<br><br>Explica el ejemplo anterior como un caso de éxito, describiendo las herramientas, técnicas, estrategias o modelos que se aplicaron para alcanzar resultados positivos. Menciona brevemente cómo se tomaron las decisiones clave y qué factores contribuyeron al logro. Da un contexto completo sin que pase las 60 palabras.<br><br>Presenta los resultados positivos del caso de éxito, preferiblemente con indicadores, impactos o mejoras tangibles. Esta diapositiva debe cerrar la narrativa del ejemplo, destacando las conclusiones o aprendizajes obtenidos. Da un contexto completo sin que pase las 60 palabras.<br><br>Crea un nuevo caso real o ficticio en forma de reto, vinculado al tema trabajado. Describe el contexto, las variables relevantes y los datos necesarios para la toma de decisiones. El objetivo es invitar al estudiante a analizar y aplicar los conocimientos adquiridos. Empieza esta sección con un "Ahora es tu turno. Analiza la siguiente situación y contesta las preguntas".<br><br>Diseña un árbol de decisión interactivo con tres preguntas derivadas del caso planteado. Las dos primeras deben ser de selección múltiple con cuatro opciones de respuesta cada una, y la tercera debe ser de verdadero o falso con una breve situación contextual. Incluye la retroalimentación automática para cada una de las tres preguntas.<br><br>Se debe realizar una retroalimentación por cada opción de respuesta e indicar cuál es correcta o incorrecta y el porqué. Cada retroalimentación debe ser formativa, breve y explicar el porqué de la respuesta, vinculándola con el contenido del ebook y los aprendizajes del caso.</div>
+      </div>
+      <div class="mp-resource">
+        <div class="mp-res-title">🗂 Infografía</div>
+        <div class="mp-res-body">Redacta un guion para una infografía resumen, que sintetice de forma ordenada, visual y comprensible todo el contenido del ebook. El guion debe estar dividido en seis secciones y ocupar un máximo de dos páginas en total. No generes la infografía ni elementos gráficos, solo el contenido textual y la organización propuesta.</div>
+      </div>
+      <div class="mp-resource">
+        <div class="mp-res-title">📋 Actividades</div>
+        <div class="mp-res-body">Hay dos tipos de actividades en cada sesión: una <em>autónoma</em> y una <em>práctica</em>. La estructura es la misma, pero la naturaleza cambia — el nivel de dificultad y análisis es distinto: la autónoma ayuda a reforzar conocimiento y la práctica permite demostrar los conocimientos adquiridos.<br><br>Estas actividades vienen con rúbricas con una estructura ya prediseñada por la universidad. Por ende, esa estructura <strong>NO se puede cambiar</strong>.<br><br>Solo los cursos de pregrado tienen una evaluación diagnóstica al inicio y un proyecto final al final de la última sesión. Y solo en pregrado, la evaluación final no es de la misma cantidad de preguntas que la de posgrado: se genera una evaluación adicional cognitiva de 10 preguntas y luego sí va la final.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip danger">
+    <span class="tip-icon">💾</span>
+    <div><strong>IMPORTANTE GUARDAR</strong> — Una vez esté el megaprompt, dale clic en guardar. Sin guardar las instrucciones no quedan activas en el proyecto.</div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(2)">← Anterior</button>
+    <button class="btn btn-primary" onclick="markDone(3);goTo(4)">Siguiente →</button>
+  </div>
+</div>
+
+<!-- 4 FRAMEWORK ABCDEF -->
+<div class="section" id="sec4">
+  <div class="sec-header">
+    <div class="sec-icon">🧩</div>
+    <div>
+      <div class="sec-title">Framework ABCDEF</div>
+      <div class="sec-sub">Herramienta complementaria para estructurar y no dejar nada por fuera al construir un megaprompt</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">¿Para qué sirve?</div>
+    <div class="card-text">El framework ABCDEF es una estructura de 6 secciones que garantiza que el megaprompt cubra todos los ángulos: quién es Claude en ese proyecto, qué sabe, qué debe lograr, cómo debe actuar, qué no debe hacer y cómo debe responder.</div>
+  </div>
+  <div class="abcdef-grid">
+    <div class="abc-card"><div class="abc-letter">A</div><div class="abc-name">Actor</div><div class="abc-desc">Define quién ES Claude: nombre, rol, especialidad, tono de voz.<br><br><em>Ej: "Eres una experta en diseño instruccional para educación superior en LATAM."</em></div></div>
+    <div class="abc-card"><div class="abc-letter">B</div><div class="abc-name">Bosque (contexto)</div><div class="abc-desc">El entorno completo: cliente, país, cómo se llaman las cosas, archivos disponibles.<br><br><em>Ej: "El cliente es de Ecuador. No se llama 'curso' sino 'proyecto formativo'. Tiene pregrado y posgrado."</em></div></div>
+    <div class="abc-card"><div class="abc-letter">C</div><div class="abc-name">Compromiso (objetivo)</div><div class="abc-desc">El resultado concreto de cada conversación. Una sola meta principal.<br><br><em>Ej: "Construir el diseño instruccional completo módulo a módulo según el syllabus."</em></div></div>
+    <div class="abc-card"><div class="abc-letter">D</div><div class="abc-name">Desarrollo (pasos)</div><div class="abc-desc">Secuencia de comportamientos: flujo, fases, orden de producción.<br><br><em>Ej: "1. Analiza el syllabus. 2. Propón estructura. 3. Genera recurso por recurso esperando aprobación."</em></div></div>
+    <div class="abc-card"><div class="abc-letter">E</div><div class="abc-name">Evita</div><div class="abc-desc">Lista explícita de restricciones absolutas.<br><br><em>Ej: "No cambies la estructura de las rúbricas prediseñadas. No uses ejemplos fuera de Ecuador sin justificación."</em></div></div>
+    <div class="abc-card"><div class="abc-letter">F</div><div class="abc-name">Formato</div><div class="abc-desc">Extensión, estructura, citación, idioma de cada recurso.<br><br><em>Ej: "Desarrollo teórico: 15 páginas, mínimo 2 imágenes y 2 tablas, normas APA, fuentes de la biblioteca."</em></div></div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(3)">← Anterior</button>
+    <button class="btn btn-primary" onclick="markDone(4);goTo(5)">Siguiente →</button>
+  </div>
+</div>
+
+<!-- 5 INICIO DE CREACIÓN -->
+<div class="section" id="sec5">
+  <div class="sec-header">
+    <div class="sec-icon">🚀</div>
+    <div>
+      <div class="sec-title">Inicio de creación</div>
+      <div class="sec-sub">Una vez escribas tu megaprompt y estés a gusto con él, es hora de empezar la creación</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Antes de escribir el primer mensaje de creación</div>
+    <div class="step-list" style="margin-bottom:0">
+      <div class="step-row"><div class="step-dot">1</div><div><div class="step-title-sm">Cierra el panel del lado derecho</div><div class="step-desc">El panel de instrucciones y archivos no necesita estar visible durante la creación del contenido</div></div></div>
+      <div class="step-row"><div class="step-dot">2</div><div><div class="step-title-sm">Quédate dentro del proyecto y abre un chat nuevo</div><div class="step-desc">Haz clic en <em>"Nuevo chat"</em> dentro del mismo proyecto. Así el chat hereda automáticamente todas las instrucciones del megaprompt</div></div></div>
+      <div class="step-row"><div class="step-dot">3</div><div><div class="step-title-sm">Sube el sílabo del curso en esta conversación</div><div class="step-desc">El sílabo es el documento guía. Adjúntalo en este chat para que Claude lo use al construir el contenido módulo a módulo</div></div></div>
+    </div>
+  </div>
+  <div class="tip warn">
+    <span class="tip-icon">⚠️</span>
+    <div><strong>Regla fundamental — siempre sin excepción:</strong><br>Al crear un curso es esencial que vayas <em>módulo a módulo</em>. No puedes crear el contenido en una sola interacción. Siempre, siempre debes iterar con la herramienta antes de avanzar al siguiente recurso o módulo.</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Prompt de inicio — adapta solo el nombre del curso</div>
+    <div class="code-block" style="margin-bottom:0;font-size:12.5px">Vamos a crear el curso "[nombre del curso]", para ello te voy a 
+compartir el sílabo del curso. Empezaremos con la construcción 
+del módulo o sesión 1, ten presente todas las indicaciones del 
+proyecto y del blueprint. Iniciemos con el desarrollo teórico.
+
+Antes de generar un documento, debes mostrarme en el panel de 
+conversación el resultado para ir revisando y si te doy el aval 
+puedes continuar.
+
+Incluye en el desarrollo teórico las indicaciones o prompts para 
+la creación de imágenes. Te iré dando mi aprobación para que 
+sigas la creación de los recursos y módulos.</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Flujo de trabajo por cada recurso — sin saltarse pasos</div>
+    <div class="step-list" style="margin-bottom:0">
+      <div class="step-row"><div class="step-dot">A</div><div><div class="step-title-sm">Claude muestra el resultado en el panel de conversación</div><div class="step-desc">Primero presenta el borrador en el chat, <em>sin generar el documento final todavía</em></div></div></div>
+      <div class="step-row"><div class="step-dot">B</div><div><div class="step-title-sm">Tú revisas y das el aval (o indicas ajustes)</div><div class="step-desc">Das la aprobación explícita o indicas qué cambiar antes de que genere el archivo final</div></div></div>
+      <div class="step-row"><div class="step-dot">C</div><div><div class="step-title-sm">Claude genera el documento final</div><div class="step-desc">Solo después de tu aprobación genera el recurso completo</div></div></div>
+      <div class="step-row"><div class="step-dot">D</div><div><div class="step-title-sm">Avanzas al siguiente recurso o módulo</div><div class="step-desc">Siempre en orden y con iteración — nunca saltar la revisión</div></div></div>
+    </div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(4)">← Anterior</button>
+    <button class="btn btn-primary" onclick="markDone(5);goTo(6)">Siguiente →</button>
+  </div>
+</div>
+
+<!-- 6 ITERACIONES -->
+<div class="section" id="sec6">
+  <div class="sec-header">
+    <div class="sec-icon">🔄</div>
+    <div>
+      <div class="sec-title">Iteraciones</div>
+      <div class="sec-sub">Independientemente de si es la primera creación o ya vas en los últimos módulos, siempre debes revisar e iterar con Claude</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Qué revisar siempre — en cada recurso y módulo</div>
+    <div class="step-list" style="margin-bottom:0">
+      <div class="step-row"><div class="step-dot">1</div><div><div class="step-title-sm">Contexto de los ejemplos según el nivel del curso</div><div class="step-desc">Es necesario que los ejemplos tengan un contexto de acuerdo con el nivel del curso (pregrado vs. posgrado) y que se entienda claramente su aplicación práctica</div></div></div>
+      <div class="step-row"><div class="step-dot">2</div><div><div class="step-title-sm">Fórmulas matemáticas aplicadas en ejemplos</div><div class="step-desc">Usualmente cuando integra fórmulas matemáticas, revisar siempre que no solo las muestre sino que las <em>aplique en un ejemplo resuelto</em></div></div></div>
+      <div class="step-row"><div class="step-dot">3</div><div><div class="step-title-sm">Referencias citadas y links de referencia</div><div class="step-desc">Revisa las referencias y que estén correctamente citadas. También revisa los links de referencia y que sean válidos</div></div></div>
+      <div class="step-row"><div class="step-dot">4</div><div><div class="step-title-sm">Lenguaje adaptado al proyecto</div><div class="step-desc">Puedes indicarle que amplíe o modifique el lenguaje según las especificidades del proyecto: nivel académico, terminología propia del cliente, registro</div></div></div>
+      <div class="step-row"><div class="step-dot">5</div><div><div class="step-title-sm">Continuidad e hilación pedagógica entre módulos</div><div class="step-desc">Siempre revisa que los módulos tengan continuidad. No deben repetir conceptos, pero sí mantener la hilación pedagógica. Usa el prompt de abajo al pasar de un módulo a otro.</div></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Prompt para pasar de un módulo al siguiente</div>
+    <div class="code-block" style="margin-bottom:0;font-size:12.5px">Ahora vamos a continuar con el módulo / sesión / tema [número].
+
+Recuerda que en el tema anterior se abordaron [elementos 
+abordados en el módulo anterior].
+
+En este nuevo módulo no repitas esos conceptos, pero es 
+indispensable que se mantenga la hilación pedagógica.</div>
+  </div>
+  <div class="tip success">
+    <span class="tip-icon">👥</span>
+    <div>Este es un paso a paso general. Sin embargo, siempre cuentas con <em>tus compañeros y el equipo de DI</em> para que puedas apoyarte con ellos en cualquier etapa del proceso.</div>
+  </div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(5)">← Anterior</button>
+    <button class="btn btn-primary" onclick="markDone(6);goTo(7)">Ver checklist →</button>
+  </div>
+</div>
+
+<!-- 7 CHECKLIST -->
+<div class="section" id="sec7">
+  <div class="sec-header">
+    <div class="sec-icon">✅</div>
+    <div>
+      <div class="sec-title">Checklist de cierre</div>
+      <div class="sec-sub">Marca cada ítem antes de dar el proyecto por listo</div>
+    </div>
+  </div>
+  <div class="check-list" id="checkList"></div>
+  <div class="done-banner" id="doneBanner">🎉 ¡Todo listo! El proyecto está completo y preparado para producción.</div>
+  <div style="margin-top:14px"><button class="btn" onclick="resetChecks()" style="color:var(--text3);font-size:12px">Reiniciar lista</button></div>
+  <div class="nav-buttons">
+    <button class="btn" onclick="goTo(6)">← Anterior</button>
+    <button class="btn" disabled>Fin del proceso ✓</button>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const SECTIONS=[
+  {label:'Bienvenida'},{label:'Creación del proyecto'},{label:'Archivos en MD'},
+  {label:'Megaprompt'},{label:'Framework ABCDEF'},{label:'Inicio de creación'},
+  {label:'Iteraciones'},{label:'Checklist de cierre'}
+];
+const CHECKS=[
+  'El proyecto tiene el nombre correcto: "Contenido - [nombre del cliente]"',
+  'El blueprint está construido de manera detallada y fue aprobado',
+  'La estructura del curso está aprobada',
+  'Todos los documentos DI están listos: plantilla DI, video, infografía, multimedia',
+  'Los archivos fueron convertidos a formato MD en una sesión aparte de Claude',
+  'Los archivos MD fueron subidos al proyecto desde el panel derecho',
+  'El megaprompt incluye: país del cliente, nomenclatura propia, modelo pedagógico, descripción de recursos, uso de fuentes y prompts de imágenes',
+  'El megaprompt fue GUARDADO en el campo "Instrucciones" del proyecto',
+  'Se probó el proyecto con al menos 3 interacciones antes de empezar la producción',
+  'Se está trabajando módulo a módulo — revisando el borrador antes de generar el documento final',
+  'Los ejemplos tienen contexto adecuado al nivel del curso (pregrado vs. posgrado)',
+  'Las fórmulas matemáticas están aplicadas en ejemplos resueltos (no solo mostradas)',
+  'Las referencias están citadas en normas APA y los links de referencia fueron verificados',
+  'La hilación pedagógica entre módulos fue revisada con el prompt de continuidad',
+  'El equipo de DI conoce la estructura acordada y tiene acceso al proyecto',
+];
+let current=0;
+const done=new Set();
+let checks=new Array(CHECKS.length).fill(false);
+
+function buildNav(){
+  const nav=document.getElementById('sideNav');
+  const icons=['👋','📁','📝','🧠','🧩','🚀','🔄','✅'];
+  SECTIONS.forEach((s,i)=>{
+    const div=document.createElement('div');
+    div.className='nav-item'+(i===0?' active':'');
+    div.id='nav'+i;
+    div.onclick=()=>goTo(i);
+    div.innerHTML=`<div class="nav-num">${i===0?icons[0]:i}</div><div class="nav-label">${s.label}</div><span class="nav-check">✓</span>`;
+    nav.appendChild(div);
+  });
+}
+
+function buildChecks(){
+  const list=document.getElementById('checkList');
+  CHECKS.forEach((txt,i)=>{
+    const div=document.createElement('div');
+    div.className='check-item';div.id='chk'+i;
+    div.onclick=()=>toggleCheck(i);
+    div.innerHTML=`<div class="check-box" id="chkbox${i}"></div><span>${txt}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleCheck(i){
+  checks[i]=!checks[i];
+  document.getElementById('chk'+i).classList.toggle('done',checks[i]);
+  document.getElementById('chkbox'+i).textContent=checks[i]?'✓':'';
+  document.getElementById('doneBanner').style.display=checks.every(Boolean)?'flex':'none';
+}
+
+function resetChecks(){
+  checks.fill(false);
+  CHECKS.forEach((_,i)=>{
+    document.getElementById('chk'+i).classList.remove('done');
+    document.getElementById('chkbox'+i).textContent='';
+  });
+  document.getElementById('doneBanner').style.display='none';
+}
+
+function goTo(n){
+  document.querySelector('#sec'+current).classList.remove('active');
+  document.querySelector('#nav'+current).classList.remove('active');
+  current=n;
+  document.querySelector('#sec'+current).classList.add('active');
+  document.querySelector('#nav'+current).classList.add('active');
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function markDone(n){
+  done.add(n);
+  document.getElementById('nav'+n).classList.add('done');
+  updateProgress();
+}
+
+function updateProgress(){
+  const pct=Math.round(done.size/7*100);
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progLabel').textContent=done.size+' / 7';
+}
+
+buildNav();buildChecks();
+</script>
+</body>
+</html>
